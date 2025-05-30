@@ -1,0 +1,28 @@
+{
+  "custom_title": "🚏 BKK Megállók Dashboard",
+  "refresh_interval_seconds": 5,
+  "layout": {
+    "view": "grid",
+    "columns_per_row": 3,
+    "stop_order": ["BKK_F00270", "BKK_F00269", "BKK_F00268"]
+  },
+  "display": {
+    "departures_per_stop": 5,
+    "show_wheelchair_icon": true,
+    "show_stop_location": true,
+    "highlight_soon_departures": true,
+    "filter_routes": [],
+    "show_stop_code": false,
+    "show_direction": false
+  },
+  "style": {
+    "title_font_size": 32,
+    "subtitle_font_size": 24,
+    "text_font_size": 16,
+    "color_by_route": true,
+    "custom_emojis": {
+      "bus": "🚍",
+      "tram": "🚋"
+    }
+  }
+}
