@@ -48,44 +48,33 @@ if not st.session_state.logged_in:
 # --- Main Editor ---
 st.title("🛠️ BKK Display Config Editor")
 
-# --- Logout + Upload ---
+# --- Logout + Info ---
 top_col1, top_col2 = st.columns([1, 5])
 with top_col1:
     if st.button("🔒 Logout"):
         st.session_state.clear()
         st.rerun()
-
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
+# --- Upload Config ---
 st.subheader("📤 Load a Saved Config")
 uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
-
-if "pending_config_upload" not in st.session_state:
-    st.session_state.pending_config_upload = None
-
 if uploaded_file:
     try:
         uploaded_config = json.load(uploaded_file)
-        st.session_state.pending_config_upload = uploaded_config
-        st.success("✅ Config loaded successfully! Refreshing...")
-        st.rerun()
+        st.session_state.config = uploaded_config
+        st.success("✅ Config loaded successfully! Scroll down to see the updated fields.")
     except Exception as e:
         st.error(f"❌ Failed to load config: {e}")
 
-# Apply uploaded config if pending
-if st.session_state.pending_config_upload:
-    st.session_state.config = st.session_state.pending_config_upload
-    st.session_state.pending_config_upload = None
-
 # --- Load Config ---
 config = st.session_state.config or {}
-
-# Set defaults
 layout = config.get("layout", {})
 display = config.get("display", {})
 style = config.get("style", {})
 
+# --- Config Editor Form ---
 stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", []))).split(",")
 
 st.subheader("Layout")
@@ -110,7 +99,7 @@ text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_font
 emoji_bus = st.text_input("Bus emoji", style.get("custom_emojis", {}).get("bus", "🚍"))
 emoji_tram = st.text_input("Tram emoji", style.get("custom_emojis", {}).get("tram", "🚋"))
 
-# Build new config
+# --- Build New Config ---
 new_config = {
     "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard")),
     "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30)),
@@ -140,7 +129,7 @@ new_config = {
     }
 }
 
-# Show + Save
+# --- Save Config ---
 st.subheader("💾 Save Config")
 config_json = json.dumps(new_config, indent=2, ensure_ascii=False)
 st.code(config_json, language="json")
@@ -152,5 +141,5 @@ if st.button("Save to My Config"):
     else:
         st.error(msg)
 
-# Download
+# --- Download Button ---
 st.download_button("⬇️ Download config.json", config_json, file_name="config.json", mime="application/json")
