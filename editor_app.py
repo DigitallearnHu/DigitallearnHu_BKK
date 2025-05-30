@@ -22,12 +22,22 @@ default_states = {
     "generated_code": "",
     "code_sent_time": 0,
 }
-def set_session_states():
-    for key, default_value in default_states.items():
-        if key not in st.session_state:
-            st.session_state[key] = default_value
 
-set_session_states()
+for key, default_value in default_states.items():
+    if key not in st.session_state:
+        st.session_state[key] = default_value
+
+def hard_refresh():
+    st.components.v1.html(
+        """
+        <script>
+            window.location.reload(true);
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
 
 def config_hash(config: dict) -> str:
     return hashlib.md5(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
@@ -79,8 +89,7 @@ def login_ui():
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
-                        set_session_states()
-                        st.rerun()
+                        hard_refresh()
                     else:
                         st.error(msg)
         with col2:
