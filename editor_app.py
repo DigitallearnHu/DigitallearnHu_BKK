@@ -3,7 +3,7 @@ import json
 import hashlib
 import random
 import time
-from sheet_manager import register_user, login_user, save_config, load_config
+from sheet_manager import register_user, login_user, save_config, load_config, find_user
 from email_sender import send_2fa_code
 from streamlit_autorefresh import st_autorefresh
 
@@ -101,7 +101,7 @@ def login_ui():
             return
 
         # Check if user exists
-        row_num, user = register_user(email, password)  # Modified to return (None, "exists") if user exists
+        row_num, user = find_user(email)  # Modified to return (None, "exists") if user exists
 
         if user == "exists":
             # User exists, try login
