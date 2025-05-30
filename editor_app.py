@@ -64,24 +64,27 @@ with top_col1:
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
-# --- Upload Config File ---
-st.subheader("📤 Load a Saved Config")
-uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
-if uploaded_file:
-    try:
-        uploaded_config = json.load(uploaded_file)
-        st.session_state.uploaded_config = uploaded_config
-        st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
-    except Exception as e:
-        st.error(f"❌ Failed to load config: {e}")
+# --- Prevent re-apply from triggering upload again ---
+if "just_applied_config" in st.session_state:
+    del st.session_state["just_applied_config"]
+else:
+    uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
+    if uploaded_file:
+        try:
+            uploaded_config = json.load(uploaded_file)
+            st.session_state.uploaded_config = uploaded_config
+            st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
+        except Exception as e:
+            st.error(f"❌ Failed to load config: {e}")
 
-# --- Apply Uploaded Config (no preview) ---
+# --- Apply Uploaded Config ---
 if st.session_state.uploaded_config:
+    st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
         st.session_state.config_key_suffix = config_hash(st.session_state.config)
-        st.success("✅ Config applied.")
+        st.session_state.just_applied_config = True
         st.rerun()
 
 # --- Load Active Config ---
