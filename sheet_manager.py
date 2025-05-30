@@ -1,5 +1,6 @@
 import hashlib
 import json
+import streamlit as st
 from datetime import datetime, date
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -10,9 +11,10 @@ WORKSHEET_NAME = "users"
 # Setup credentials and open sheet
 def get_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("service_account.json", scope)
+    json_data = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(json_data, scope)
     client = gspread.authorize(creds)
-    sheet = client.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+    sheet = client.open("UsersAndConfigs").worksheet("users")
     return sheet
 
 def hash_password(password):
