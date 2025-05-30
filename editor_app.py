@@ -44,9 +44,18 @@ def login_ui():
 
     if st.session_state.awaiting_2fa:
         st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
-        code_input = st.text_input("Enter 2FA Code", max_chars=6, key="code_input")
+        
+        st.write("Enter your 6-digit verification code:")
+        cols = st.columns(6)
+        code_digits = []
+        for i, col in enumerate(cols):
+            digit = col.text_input(f"{i+1}", max_chars=1, key=f"code_digit_{i}", label_visibility="collapsed")
+            code_digits.append(digit)
+    
+        code_input = "".join(code_digits)
+        
         resend_disabled = not can_resend_code()
-        col1, col2 = st.columns([3,1])
+        col1, col2 = st.columns([3, 1])
         with col1:
             if st.button("Verify Code"):
                 if code_input == st.session_state.generated_code:
@@ -59,7 +68,7 @@ def login_ui():
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
-                        st.rerun()
+                        st.experimental_rerun()
                     else:
                         st.error(msg)
                 else:
