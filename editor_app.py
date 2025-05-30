@@ -57,7 +57,7 @@ with top_col1:
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
-# --- Upload Config (safe override, no rerun) ---
+# --- Upload Config (safe override, clears widget cache) ---
 st.subheader("📤 Load a Saved Config")
 uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
 config = st.session_state.config or {}
@@ -65,8 +65,12 @@ config = st.session_state.config or {}
 if uploaded_file:
     try:
         uploaded_config = json.load(uploaded_file)
-        config = uploaded_config  # override just for this run
+        config = uploaded_config
         st.success("✅ Config loaded. Scroll down to edit or save.")
+        # Clear widget state to force refresh from uploaded values
+        for key in list(st.session_state.keys()):
+            if key not in ["logged_in", "email", "config"]:
+                del st.session_state[key]
     except Exception as e:
         st.error(f"❌ Failed to load config: {e}")
 
