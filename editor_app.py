@@ -68,8 +68,12 @@ def login_ui():
                 else:
                     ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
                     if ok:
-                        st.success("✅ Registration successful. Please log in now.")
+                        st.success("✅ Registration successful. Redirecting to dashboard...")
                         st.session_state.awaiting_2fa = False
+                        st.session_state.logged_in = True
+                        st.session_state.email = st.session_state.pending_email
+                        st.session_state.config = load_config(st.session_state.email) or {}
+                        st.session_state.config_key_suffix = config_hash(st.session_state.config)
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
