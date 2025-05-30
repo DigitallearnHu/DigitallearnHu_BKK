@@ -79,6 +79,8 @@ def login_ui():
                     st.error("❌ Invalid code. Please try again.")
                 else:
                     ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
+                    st.error(ok)
+                    st.error(msg)
                     if ok:
                         st.success("✅ Registration successful. Redirecting to dashboard...")
                         st.session_state.awaiting_2fa = False
