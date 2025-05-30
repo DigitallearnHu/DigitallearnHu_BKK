@@ -20,8 +20,9 @@ def get_sheet():
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-def find_user(sheet, email):
+def find_user(email):
     try:
+        sheet = get_sheet()
         records = sheet.get_all_records()
         for i, row in enumerate(records, start=2):
             if row["Email"].strip().lower() == email.strip().lower():
