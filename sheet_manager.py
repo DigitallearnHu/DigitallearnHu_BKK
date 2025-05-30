@@ -50,8 +50,6 @@ def login_user(email, password):
         return False, "Incorrect password.", None
     return True, "Login successful.", row_num
 
-from datetime import datetime, date
-
 def save_config(email, config_json):
     sheet = get_sheet()
     row_num, user = find_user(sheet, email)
@@ -59,7 +57,6 @@ def save_config(email, config_json):
     if not user or not row_num:
         return False, "User not found or invalid row number."
 
-    # Determine if today is a new day compared to last upload
     today = date.today().isoformat()
     last_upload_raw = user.get("LastUpload", "")
     last_upload_date = last_upload_raw.split("T")[0] if "T" in last_upload_raw else ""
@@ -78,10 +75,10 @@ def save_config(email, config_json):
     config_str = json.dumps(config_json)
 
     try:
-        # Update individual cells
-        sheet.update(f"C{row_num}", now)                   # LastUpload
-        sheet.update(f"D{row_num}", str(upload_count))     # UploadCount
-        sheet.update(f"E{row_num}", config_str)            # Config
+        # ✅ Each update requires a 2D list: [[value]]
+        sheet.update(f"C{row_num}", [[now]])                   # LastUpload
+        sheet.update(f"D{row_num}", [[str(upload_count)]])     # UploadCount
+        sheet.update(f"E{row_num}", [[config_str]])            # Config
     except Exception as e:
         return False, f"Error updating sheet: {e}"
 
