@@ -50,25 +50,41 @@ def login_user(email, password):
         return False, "Incorrect password.", None
     return True, "Login successful.", row_num
 
+from datetime import datetime, date
+
 def save_config(email, config_json):
     sheet = get_sheet()
     row_num, user = find_user(sheet, email)
-    if not user:
-        return False, "User not found."
 
+    if not user or not row_num:
+        return False, "User not found or invalid row number."
+
+    # Determine if today is a new day compared to last upload
     today = date.today().isoformat()
-    last_upload = user.get("LastUpload", "").split("T")[0]
-    upload_count = int(user.get("UploadCount", 0))
+    last_upload_raw = user.get("LastUpload", "")
+    last_upload_date = last_upload_raw.split("T")[0] if "T" in last_upload_raw else ""
 
-    if last_upload != today:
+    try:
+        upload_count = int(user.get("UploadCount", 0))
+    except ValueError:
+        upload_count = 0
+
+    if last_upload_date != today:
         upload_count = 1
     else:
         upload_count += 1
 
     now = datetime.now().isoformat()
-    sheet.update(f"C{row_num}", now)  # LastUpload
-    sheet.update(f"D{row_num}", upload_count)  # UploadCount
-    sheet.update(f"E{row_num}", json.dumps(config_json))  # Config
+    config_str = json.dumps(config_json)
+
+    try:
+        # Update individual cells
+        sheet.update(f"C{row_num}", now)                   # LastUpload
+        sheet.update(f"D{row_num}", str(upload_count))     # UploadCount
+        sheet.update(f"E{row_num}", config_str)            # Config
+    except Exception as e:
+        return False, f"Error updating sheet: {e}"
+
     return True, f"Upload #{upload_count} saved."
 
 def load_config(email):
