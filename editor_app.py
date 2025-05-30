@@ -77,12 +77,12 @@ if uploaded_file:
 
 # --- Apply Uploaded Config (no preview) ---
 if st.session_state.uploaded_config:
-    st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
         st.session_state.config_key_suffix = config_hash(st.session_state.config)
-        st.experimental_rerun()
+        st.success("✅ Config applied.")
+        st.rerun()
 
 # --- Load Active Config ---
 config = st.session_state.config or {}
