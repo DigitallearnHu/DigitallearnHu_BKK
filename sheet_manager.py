@@ -66,6 +66,11 @@ def save_config(email, config_json):
     except ValueError:
         upload_count = 0
 
+    MAX_UPLOADS_PER_DAY = int(st.secrets.get("MAX_UPLOADS_PER_DAY", 10))
+
+    if last_upload_date == today and upload_count >= MAX_UPLOADS_PER_DAY:
+        return False, f"Daily upload limit reached ({MAX_UPLOADS_PER_DAY}/day)."
+
     if last_upload_date != today:
         upload_count = 1
     else:
@@ -75,14 +80,13 @@ def save_config(email, config_json):
     config_str = json.dumps(config_json)
 
     try:
-        # ✅ Each update requires a 2D list: [[value]]
-        sheet.update(f"C{row_num}", [[now]])                   # LastUpload
-        sheet.update(f"D{row_num}", [[str(upload_count)]])     # UploadCount
-        sheet.update(f"E{row_num}", [[config_str]])            # Config
+        sheet.update(f"C{row_num}", [[now]])                     # LastUpload
+        sheet.update(f"D{row_num}", [[str(upload_count)]])       # UploadCount
+        sheet.update(f"E{row_num}", [[config_str]])              # Config
     except Exception as e:
         return False, f"Error updating sheet: {e}"
 
-    return True, f"Upload #{upload_count} saved."
+    return True, f"✅ Upload #{upload_count} saved successfully."
 
 def load_config(email):
     sheet = get_sheet()
