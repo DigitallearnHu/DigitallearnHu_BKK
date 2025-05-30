@@ -83,7 +83,10 @@ view = layout_col[0].selectbox("View", ["grid", "list"], index=["grid", "list"].
 columns = layout_col[1].number_input("Columns per row", 1, 5, layout.get("columns_per_row", 3))
 
 st.subheader("Display Options")
-departures = st.slider("Departures per stop", 1, 10, display.get("departures_per_stop", 5))
+raw_departures = display.get("departures_per_stop", 5)
+departures_default = raw_departures if isinstance(raw_departures, int) and 1 <= raw_departures <= 10 else 5
+departures = st.slider("Departures per stop", 1, 10, departures_default)
+
 wheelchair = st.checkbox("Show wheelchair icon ♿", display.get("show_wheelchair_icon", True))
 location = st.checkbox("Show stop location 📍", display.get("show_stop_location", True))
 highlight = st.checkbox("Highlight soon departures 🔔", display.get("highlight_soon_departures", True))
