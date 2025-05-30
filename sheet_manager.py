@@ -14,7 +14,7 @@ def get_sheet():
     json_data = json.loads(st.secrets["SERVICE_ACCOUNT_JSON"])
     creds = ServiceAccountCredentials.from_json_keyfile_dict(json_data, scope)
     client = gspread.authorize(creds)
-    sheet = client.open("UsersAndConfigs").worksheet("users")
+    sheet = client.open("Digitallearn_BKK").worksheet("users")
     return sheet
 
 def hash_password(password):
