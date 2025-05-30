@@ -37,7 +37,7 @@ def login_ui():
                 st.session_state.email = email
                 st.session_state.config = load_config(email) or {}
                 st.success("Login successful.")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(msg)
 
