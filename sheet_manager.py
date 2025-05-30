@@ -23,12 +23,12 @@ def hash_password(password):
 def find_user(sheet, email):
     try:
         records = sheet.get_all_records()
-        for i, row in enumerate(records, start=2):  # Row 2 = first data row
+        for i, row in enumerate(records, start=2):
             if row["Email"].strip().lower() == email.strip().lower():
                 return i, row
         return None, None
     except Exception as e:
-        print(f"❌ Error finding user: {e}")
+        print(f"Error finding user: {e}")
         return None, None
 
 def register_user(email, password):
