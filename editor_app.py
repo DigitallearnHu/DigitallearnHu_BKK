@@ -61,14 +61,22 @@ with top_col2:
 st.subheader("📤 Load a Saved Config")
 uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
 
+if "pending_config_upload" not in st.session_state:
+    st.session_state.pending_config_upload = None
+
 if uploaded_file:
     try:
         uploaded_config = json.load(uploaded_file)
-        st.session_state.config = uploaded_config
-        st.success("✅ Config loaded successfully!")
+        st.session_state.pending_config_upload = uploaded_config
+        st.success("✅ Config loaded successfully! Refreshing...")
         st.rerun()
     except Exception as e:
         st.error(f"❌ Failed to load config: {e}")
+
+# Apply uploaded config if pending
+if st.session_state.pending_config_upload:
+    st.session_state.config = st.session_state.pending_config_upload
+    st.session_state.pending_config_upload = None
 
 # --- Load Config ---
 config = st.session_state.config or {}
