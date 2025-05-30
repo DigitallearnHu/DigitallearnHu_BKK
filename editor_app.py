@@ -59,6 +59,9 @@ def login_ui():
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
 
+        refresh_key = "count_active" if st.session_state.awaiting_2fa and seconds_left > 0 else "count_stopped"
+        st_autorefresh(interval=1000, limit=60, key=refresh_key)
+
         #if st.session_state.awaiting_2fa and seconds_left > 0:
         #    st_autorefresh(interval=1000, limit=60, key=refresh_key)
 
