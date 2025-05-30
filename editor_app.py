@@ -9,24 +9,22 @@ from email_sender import send_2fa_code
 st.set_page_config(page_title="BKK Config Editor", layout="centered")
 
 # --- State Defaults ---
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "email" not in st.session_state:
-    st.session_state.email = ""
-if "config" not in st.session_state:
-    st.session_state.config = {}
-if "config_key_suffix" not in st.session_state:
-    st.session_state.config_key_suffix = "default"
-if "awaiting_2fa" not in st.session_state:
-    st.session_state.awaiting_2fa = False
-if "pending_email" not in st.session_state:
-    st.session_state.pending_email = ""
-if "pending_password" not in st.session_state:
-    st.session_state.pending_password = ""
-if "generated_code" not in st.session_state:
-    st.session_state.generated_code = ""
-if "code_sent_time" not in st.session_state:
-    st.session_state.code_sent_time = 0
+default_states = {
+    "logged_in": False,
+    "email": "",
+    "config": {},
+    "uploaded_config": None,
+    "config_key_suffix": "default",
+    "awaiting_2fa": False,
+    "pending_email": "",
+    "pending_password": "",
+    "generated_code": "",
+    "code_sent_time": 0,
+}
+
+for key, default_value in default_states.items():
+    if key not in st.session_state:
+        st.session_state[key] = default_value
 
 def config_hash(config: dict) -> str:
     return hashlib.md5(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
