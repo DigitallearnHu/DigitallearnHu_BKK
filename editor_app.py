@@ -50,8 +50,6 @@ def generate_6_digit_code() -> str:
 def can_resend_code() -> bool:
     return time.time() - st.session_state.code_sent_time > 60
 
-integrate to this:
-
 def login_ui():
     st.title("🔐 Login or Register")
 
