@@ -60,7 +60,8 @@ def login_ui():
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
 
-        if st.session_state.awaiting_2fa and seconds_left > 0:
+        # Only auto-refresh if awaiting 2FA and timer > 0
+        if seconds_left > 0 and st.session_state.awaiting_2fa:
             st_autorefresh(interval=1000, limit=60, key="count")
 
         code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
@@ -71,30 +72,34 @@ def login_ui():
             st.info("You can request a new code now.")
 
         col1, col2 = st.columns([3, 1])
+
         with col1:
             if st.button("Verify Code"):
                 if len(code_input) != 6:
                     st.warning("Please enter all 6 digits of the verification code.")
-                elif code_input != st.session_state.generated_code:
+                    return
+                if code_input != st.session_state.generated_code:
                     st.error("❌ Invalid code. Please try again.")
+                    return
+
+                st.write("DEBUG: Registering user...")
+                ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
+                st.write("DEBUG:", ok, msg)
+                if ok:
+                    st.success("✅ Registration successful. Redirecting to dashboard...")
+                    # Clear 2FA and temp state before refresh
+                    st.session_state.awaiting_2fa = False
+                    st.session_state.logged_in = True
+                    st.session_state.email = st.session_state.pending_email
+                    st.session_state.config = load_config(st.session_state.email) or {}
+                    st.session_state.config_key_suffix = config_hash(st.session_state.config)
+                    st.session_state.generated_code = ""
+                    st.session_state.pending_email = ""
+                    st.session_state.pending_password = ""
+                    st.rerun()
                 else:
-                    st.write("DEBUG: Wants to register")
-                    ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
-                    st.write("DEBUG:", ok, msg)
-                    if ok:
-                        seconds_left = 0
-                        st.success("✅ Registration successful. Redirecting to dashboard...")
-                        st.session_state.awaiting_2fa = False
-                        st.session_state.logged_in = False
-                        st.session_state.email = st.session_state.pending_email
-                        st.session_state.config = load_config(st.session_state.email) or {}
-                        st.session_state.config_key_suffix = config_hash(st.session_state.config)
-                        st.session_state.generated_code = ""
-                        st.session_state.pending_email = ""
-                        st.session_state.pending_password = ""
-                        hard_refresh()
-                    else:
-                        st.error(msg)
+                    st.error(msg)
+
         with col2:
             if st.button("Resend Code", disabled=seconds_left > 0):
                 code = generate_6_digit_code()
@@ -145,6 +150,7 @@ def login_ui():
                 st.rerun()
             else:
                 st.error("Failed to send verification code. Please try again later.")
+
 
 def show_config_editor():
     st.title("🛠️ BKK Display Config Editor")
