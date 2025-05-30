@@ -33,13 +33,13 @@ def find_user(sheet, email):
 
 def register_user(email, password):
     sheet = get_sheet()
-    _, existing = find_user(sheet, email)
+    row_num, existing = find_user(sheet, email)
     if existing:
-        return False, "Email already registered."
+        return None, "exists"  # User exists
     hashed = hash_password(password)
     now = datetime.now().isoformat()
     sheet.append_row([email, hashed, now, 0, "{}"])
-    return True, "User registered."
+    return find_user(sheet, email)  # Return newly created user info
 
 def login_user(email, password):
     sheet = get_sheet()
