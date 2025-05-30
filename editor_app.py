@@ -4,6 +4,15 @@ from sheet_manager import register_user, login_user, save_config, load_config
 
 st.set_page_config(page_title="BKK Config Editor", layout="centered")
 
+# --- Widget keys for reset ---
+WIDGET_KEYS = [
+    "Stop IDs (comma-separated)", "View", "Columns per row", "Departures per stop",
+    "Show wheelchair icon ♿", "Show stop location 📍", "Highlight soon departures 🔔",
+    "Show stop code", "Show direction", "Only show these routes (comma-separated)",
+    "Title font size", "Subtitle font size", "Text font size",
+    "Bus emoji", "Tram emoji", "Page Title", "Auto-refresh (seconds)"
+]
+
 # --- Session State ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -57,7 +66,7 @@ with top_col1:
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
-# --- Upload Config (safe override, clears widget cache) ---
+# --- Upload Config ---
 st.subheader("📤 Load a Saved Config")
 uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
 config = st.session_state.config or {}
@@ -67,9 +76,10 @@ if uploaded_file:
         uploaded_config = json.load(uploaded_file)
         config = uploaded_config
         st.success("✅ Config loaded. Scroll down to edit or save.")
-        # Clear widget state to force refresh from uploaded values
-        for key in list(st.session_state.keys()):
-            if key not in ["logged_in", "email", "config"]:
+
+        # 🧽 Clear widget cache so Streamlit resets UI
+        for key in WIDGET_KEYS:
+            if key in st.session_state:
                 del st.session_state[key]
     except Exception as e:
         st.error(f"❌ Failed to load config: {e}")
@@ -79,37 +89,37 @@ layout = config.get("layout", {})
 display = config.get("display", {})
 style = config.get("style", {})
 
-stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", []))).split(",")
+stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", [])), key="Stop IDs (comma-separated)").split(",")
 
 st.subheader("Layout")
 layout_col = st.columns(2)
-view = layout_col[0].selectbox("View", ["grid", "list"], index=["grid", "list"].index(layout.get("view", "grid")))
-columns = layout_col[1].number_input("Columns per row", 1, 5, layout.get("columns_per_row", 3))
+view = layout_col[0].selectbox("View", ["grid", "list"], index=["grid", "list"].index(layout.get("view", "grid")), key="View")
+columns = layout_col[1].number_input("Columns per row", 1, 5, layout.get("columns_per_row", 3), key="Columns per row")
 
 st.subheader("Display Options")
 raw_departures = display.get("departures_per_stop", 5)
 departures_default = raw_departures if isinstance(raw_departures, int) and 1 <= raw_departures <= 10 else 5
-departures = st.slider("Departures per stop", 1, 10, departures_default)
+departures = st.slider("Departures per stop", 1, 10, departures_default, key="Departures per stop")
 
-wheelchair = st.checkbox("Show wheelchair icon ♿", display.get("show_wheelchair_icon", True))
-location = st.checkbox("Show stop location 📍", display.get("show_stop_location", True))
-highlight = st.checkbox("Highlight soon departures 🔔", display.get("highlight_soon_departures", True))
-stop_code = st.checkbox("Show stop code", display.get("show_stop_code", False))
-direction = st.checkbox("Show direction", display.get("show_direction", False))
-routes_filter = st.text_input("Only show these routes (comma-separated)", ",".join(display.get("filter_routes", [])))
+wheelchair = st.checkbox("Show wheelchair icon ♿", display.get("show_wheelchair_icon", True), key="Show wheelchair icon ♿")
+location = st.checkbox("Show stop location 📍", display.get("show_stop_location", True), key="Show stop location 📍")
+highlight = st.checkbox("Highlight soon departures 🔔", display.get("highlight_soon_departures", True), key="Highlight soon departures 🔔")
+stop_code = st.checkbox("Show stop code", display.get("show_stop_code", False), key="Show stop code")
+direction = st.checkbox("Show direction", display.get("show_direction", False), key="Show direction")
+routes_filter = st.text_input("Only show these routes (comma-separated)", ",".join(display.get("filter_routes", [])), key="Only show these routes (comma-separated)")
 
 st.subheader("Style")
 fonts = st.columns(3)
-title_size = fonts[0].number_input("Title font size", 10, 100, style.get("title_font_size", 32))
-subtitle_size = fonts[1].number_input("Subtitle font size", 10, 60, style.get("subtitle_font_size", 24))
-text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_font_size", 16))
-emoji_bus = st.text_input("Bus emoji", style.get("custom_emojis", {}).get("bus", "🚍"))
-emoji_tram = st.text_input("Tram emoji", style.get("custom_emojis", {}).get("tram", "🚋"))
+title_size = fonts[0].number_input("Title font size", 10, 100, style.get("title_font_size", 32), key="Title font size")
+subtitle_size = fonts[1].number_input("Subtitle font size", 10, 60, style.get("subtitle_font_size", 24), key="Subtitle font size")
+text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_font_size", 16), key="Text font size")
+emoji_bus = st.text_input("Bus emoji", style.get("custom_emojis", {}).get("bus", "🚍"), key="Bus emoji")
+emoji_tram = st.text_input("Tram emoji", style.get("custom_emojis", {}).get("tram", "🚋"), key="Tram emoji")
 
 # --- Build Config Object ---
 new_config = {
-    "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard")),
-    "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30)),
+    "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard"), key="Page Title"),
+    "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30), key="Auto-refresh (seconds)"),
     "layout": {
         "view": view,
         "columns_per_row": columns,
