@@ -82,6 +82,7 @@ def login_ui():
                     ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
                     st.write("DEBUG:", ok, msg)
                     if ok:
+                        seconds_left = 0
                         st.success("✅ Registration successful. Redirecting to dashboard...")
                         st.session_state.awaiting_2fa = False
                         st.session_state.logged_in = False
