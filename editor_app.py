@@ -1,43 +1,99 @@
 import streamlit as st
 import json
 import hashlib
+import random
+import time
 from sheet_manager import register_user, login_user, save_config, load_config
+from email_sender import send_2fa_code
 
 st.set_page_config(page_title="BKK Config Editor", layout="centered")
 
 # --- State Defaults ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "email" not in st.session_state:
     st.session_state.email = ""
+if "config" not in st.session_state:
     st.session_state.config = {}
-    st.session_state.uploaded_config = None
+if "config_key_suffix" not in st.session_state:
     st.session_state.config_key_suffix = "default"
+if "awaiting_2fa" not in st.session_state:
+    st.session_state.awaiting_2fa = False
+if "pending_email" not in st.session_state:
+    st.session_state.pending_email = ""
+if "pending_password" not in st.session_state:
+    st.session_state.pending_password = ""
+if "generated_code" not in st.session_state:
+    st.session_state.generated_code = ""
+if "code_sent_time" not in st.session_state:
+    st.session_state.code_sent_time = 0
 
-# --- Helper ---
 def config_hash(config: dict) -> str:
     return hashlib.md5(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
 
-# --- Login/Register ---
+def is_valid_email(email: str) -> bool:
+    return "@" in email and "." in email and len(email) >= 5
+
+def generate_6_digit_code() -> str:
+    return f"{random.randint(100000, 999999)}"
+
+def can_resend_code() -> bool:
+    return time.time() - st.session_state.code_sent_time > 60
+
+# --- Login/Register UI ---
 def login_ui():
     st.title("🔐 Login or Register")
 
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    mode = st.radio("Mode", ["Login", "Register"])
+    if st.session_state.awaiting_2fa:
+        st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
+        code_input = st.text_input("Enter 2FA Code", max_chars=6, key="code_input")
+        resend_disabled = not can_resend_code()
+        col1, col2 = st.columns([3,1])
+        with col1:
+            if st.button("Verify Code"):
+                if code_input == st.session_state.generated_code:
+                    # Register user now
+                    ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
+                    if ok:
+                        st.success("✅ Registration successful. Please log in now.")
+                        # Reset 2FA state
+                        st.session_state.awaiting_2fa = False
+                        st.session_state.generated_code = ""
+                        st.session_state.pending_email = ""
+                        st.session_state.pending_password = ""
+                        st.experimental_rerun()
+                    else:
+                        st.error(msg)
+                else:
+                    st.error("❌ Invalid code. Please try again.")
+        with col2:
+            if st.button("Resend Code", disabled=resend_disabled):
+                code = generate_6_digit_code()
+                st.session_state.generated_code = code
+                sent = send_2fa_code(st.session_state.pending_email, code)
+                if sent:
+                    st.session_state.code_sent_time = time.time()
+                    st.success("✅ Verification code resent.")
+                else:
+                    st.error("❌ Failed to send verification code.")
+        return
+
+    email = st.text_input("Email", key="email_input")
+    password = st.text_input("Password", type="password", key="password_input")
 
     if st.button("Continue"):
         if not email or not password:
             st.warning("Please enter both email and password.")
             return
+        if not is_valid_email(email):
+            st.error("❌ Please enter a valid email address.")
+            return
 
-        if mode == "Register":
-            ok, msg = register_user(email, password)
-            if ok:
-                st.success(msg)
-            else:
-                st.error(msg)
+        # Check if user exists (find_user returns (row_num, user) or (None, None))
+        row_num, user = register_user(email, password)  # We modify register_user to return (None, "exists") if user exists
 
-        elif mode == "Login":
+        if user == "exists":
+            # User exists, try login
             ok, msg, _ = login_user(email, password)
             if ok:
                 st.session_state.logged_in = True
@@ -45,24 +101,42 @@ def login_ui():
                 st.session_state.config = load_config(email) or {}
                 st.session_state.config_key_suffix = config_hash(st.session_state.config)
                 st.success("Login successful.")
-                st.rerun()
+                st.experimental_rerun()
             else:
                 st.error(msg)
+        elif user is None:
+            st.error("Error checking user existence, please try again later.")
+        else:
+            # New user, start 2FA
+            code = generate_6_digit_code()
+            sent = send_2fa_code(email, code)
+            if sent:
+                st.session_state.awaiting_2fa = True
+                st.session_state.pending_email = email
+                st.session_state.pending_password = password
+                st.session_state.generated_code = code
+                st.session_state.code_sent_time = time.time()
+                st.info(f"A 6-digit verification code has been sent to {email}. Please enter it below.")
+            else:
+                st.error("Failed to send verification code. Please try again later.")
 
 if not st.session_state.logged_in:
     login_ui()
     st.stop()
 
-# --- Top Bar ---
+# --- Main Editor ---
+
 st.title("🛠️ BKK Display Config Editor")
 
 top_col1, top_col2 = st.columns([1, 5])
 with top_col1:
     if st.button("🔒 Logout"):
         st.session_state.clear()
-        st.rerun()
+        st.experimental_rerun()
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
+
+# Upload + Apply config logic here...
 
 # --- Prevent re-apply from triggering upload again ---
 if "just_applied_config" in st.session_state:
@@ -78,27 +152,22 @@ else:
         except Exception as e:
             st.error(f"❌ Failed to load config: {e}")
     elif "uploaded_config" in st.session_state and st.session_state.uploaded_config:
-        # 🧼 If file was removed via "X", clean state
         st.session_state.uploaded_config = None
 
-
-# --- Apply Uploaded Config ---
 if st.session_state.uploaded_config:
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
         st.session_state.config_key_suffix = config_hash(st.session_state.config)
         st.session_state.just_applied_config = True
-        st.rerun()
+        st.experimental_rerun()
 
-# --- Load Active Config ---
 config = st.session_state.config or {}
 layout = config.get("layout", {})
 display = config.get("display", {})
 style = config.get("style", {})
 key_suffix = st.session_state.config_key_suffix
 
-# --- Editor Form ---
 stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", [])), key=f"stops_{key_suffix}").split(",")
 
 st.subheader("Layout")
@@ -125,49 +194,7 @@ text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_font
 emoji_bus = st.text_input("Bus emoji", style.get("custom_emojis", {}).get("bus", "🚍"), key=f"bus_{key_suffix}")
 emoji_tram = st.text_input("Tram emoji", style.get("custom_emojis", {}).get("tram", "🚋"), key=f"tram_{key_suffix}")
 
-# --- Build New Config ---
 new_config = {
     "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard"), key=f"title_{key_suffix}"),
     "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30), key=f"refresh_{key_suffix}"),
     "layout": {
-        "view": view,
-        "columns_per_row": columns,
-        "stop_order": [s.strip() for s in stops if s.strip()]
-    },
-    "display": {
-        "departures_per_stop": departures,
-        "show_wheelchair_icon": wheelchair,
-        "show_stop_location": location,
-        "highlight_soon_departures": highlight,
-        "filter_routes": [r.strip() for r in routes_filter.split(",") if r.strip()],
-        "show_stop_code": stop_code,
-        "show_direction": direction
-    },
-    "style": {
-        "title_font_size": title_size,
-        "subtitle_font_size": subtitle_size,
-        "text_font_size": text_size,
-        "color_by_route": True,
-        "custom_emojis": {
-            "bus": emoji_bus,
-            "tram": emoji_tram
-        }
-    }
-}
-
-# --- Save + Download ---
-st.subheader("💾 Save Config")
-config_json = json.dumps(new_config, indent=2, ensure_ascii=False)
-st.code(config_json, language="json")
-
-if st.button("Save to My Config"):
-    ok, msg = save_config(st.session_state.email, new_config)
-    if ok:
-        st.session_state.config = new_config
-        st.session_state.config_key_suffix = config_hash(new_config)
-        st.success(msg)
-        st.rerun()
-    else:
-        st.error(msg)
-
-st.download_button("⬇️ Download config.json", config_json, file_name="config.json", mime="application/json")
