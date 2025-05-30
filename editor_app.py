@@ -54,14 +54,15 @@ def can_resend_code() -> bool:
 def login_ui():
     st.title("🔐 Login or Register")
 
+    # If awaiting 2FA, show verification UI
     if st.session_state.awaiting_2fa:
         st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
 
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
 
-        # Only auto-refresh if awaiting 2FA and timer > 0
-        if seconds_left > 0 and st.session_state.awaiting_2fa:
+        # Auto-refresh timer only while awaiting 2FA and timer active
+        if st.session_state.awaiting_2fa and seconds_left > 0:
             st_autorefresh(interval=1000, limit=60, key="count")
 
         code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
@@ -87,7 +88,7 @@ def login_ui():
                 st.write("DEBUG:", ok, msg)
                 if ok:
                     st.success("✅ Registration successful. Redirecting to dashboard...")
-                    # Clear 2FA and temp state before refresh
+                    # Clear 2FA and temp state before rerun
                     st.session_state.awaiting_2fa = False
                     st.session_state.logged_in = True
                     st.session_state.email = st.session_state.pending_email
@@ -111,8 +112,9 @@ def login_ui():
                 else:
                     st.error("❌ Failed to send verification code.")
 
-        return
+        return  # important: skip rest of UI when awaiting 2FA
 
+    # Regular login form
     email = st.text_input("Email", key="email_input")
     password = st.text_input("Password", type="password", key="password_input")
 
