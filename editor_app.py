@@ -61,7 +61,7 @@ def login_ui():
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error(msg)
                 else:
@@ -101,7 +101,7 @@ def login_ui():
                 st.session_state.config = load_config(email) or {}
                 st.session_state.config_key_suffix = config_hash(st.session_state.config)
                 st.success("Login successful.")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error(msg)
         elif user is None:
@@ -132,7 +132,7 @@ top_col1, top_col2 = st.columns([1, 5])
 with top_col1:
     if st.button("🔒 Logout"):
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
@@ -160,7 +160,7 @@ if st.session_state.uploaded_config:
         st.session_state.uploaded_config = None
         st.session_state.config_key_suffix = config_hash(st.session_state.config)
         st.session_state.just_applied_config = True
-        st.experimental_rerun()
+        st.rerun()
 
 config = st.session_state.config or {}
 layout = config.get("layout", {})
@@ -233,7 +233,7 @@ if st.button("Save to My Config"):
         st.session_state.config = new_config
         st.session_state.config_key_suffix = config_hash(new_config)
         st.success(msg)
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.error(msg)
 
