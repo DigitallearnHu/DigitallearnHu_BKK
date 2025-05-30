@@ -73,7 +73,7 @@ def login_ui():
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error(msg)
         with col2:
@@ -128,7 +128,7 @@ def login_ui():
                 st.session_state.generated_code = code
                 st.session_state.code_sent_time = time.time()
                 st.info(f"A 6-digit verification code has been sent to {email}. Please enter it below.")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Failed to send verification code. Please try again later.")
 
