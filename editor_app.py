@@ -64,20 +64,19 @@ with top_col1:
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
-# --- Upload + Apply ---
+# --- Upload Config File ---
 st.subheader("📤 Load a Saved Config")
-
 uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
 if uploaded_file:
     try:
         uploaded_config = json.load(uploaded_file)
         st.session_state.uploaded_config = uploaded_config
-        st.success("✅ File uploaded. Click below to apply it.")
+        st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
     except Exception as e:
         st.error(f"❌ Failed to load config: {e}")
 
+# --- Apply Uploaded Config (no preview) ---
 if st.session_state.uploaded_config:
-    st.code(json.dumps(st.session_state.uploaded_config, indent=2, ensure_ascii=False), language="json")
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
