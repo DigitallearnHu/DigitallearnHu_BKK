@@ -198,3 +198,43 @@ new_config = {
     "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard"), key=f"title_{key_suffix}"),
     "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30), key=f"refresh_{key_suffix}"),
     "layout": {
+        "view": view,
+        "columns_per_row": columns,
+        "stop_order": [s.strip() for s in stops if s.strip()]
+    },
+    "display": {
+        "departures_per_stop": departures,
+        "show_wheelchair_icon": wheelchair,
+        "show_stop_location": location,
+        "highlight_soon_departures": highlight,
+        "filter_routes": [r.strip() for r in routes_filter.split(",") if r.strip()],
+        "show_stop_code": stop_code,
+        "show_direction": direction
+    },
+    "style": {
+        "title_font_size": title_size,
+        "subtitle_font_size": subtitle_size,
+        "text_font_size": text_size,
+        "color_by_route": True,
+        "custom_emojis": {
+            "bus": emoji_bus,
+            "tram": emoji_tram
+        }
+    }
+}
+
+st.subheader("💾 Save Config")
+config_json = json.dumps(new_config, indent=2, ensure_ascii=False)
+st.code(config_json, language="json")
+
+if st.button("Save to My Config"):
+    ok, msg = save_config(st.session_state.email, new_config)
+    if ok:
+        st.session_state.config = new_config
+        st.session_state.config_key_suffix = config_hash(new_config)
+        st.success(msg)
+        st.experimental_rerun()
+    else:
+        st.error(msg)
+
+st.download_button("⬇️ Download config.json", config_json, file_name="config.json", mime="application/json")
