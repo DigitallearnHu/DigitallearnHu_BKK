@@ -115,8 +115,6 @@ def login_ui():
                 st.rerun()
             else:
                 st.error(msg)
-        elif user is None:
-            st.error("Error checking user existence, please try again later.")
         else:
             # New user, start 2FA
             code = generate_6_digit_code()
