@@ -69,6 +69,7 @@ if "just_applied_config" in st.session_state:
     del st.session_state["just_applied_config"]
 else:
     uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
+
     if uploaded_file:
         try:
             uploaded_config = json.load(uploaded_file)
@@ -76,10 +77,13 @@ else:
             st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
         except Exception as e:
             st.error(f"❌ Failed to load config: {e}")
+    elif "uploaded_config" in st.session_state and st.session_state.uploaded_config:
+        # 🧼 If file was removed via "X", clean state
+        st.session_state.uploaded_config = None
+
 
 # --- Apply Uploaded Config ---
 if st.session_state.uploaded_config:
-    st.success("✅ File uploaded. Click 'Apply Config' below to use it.")
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
