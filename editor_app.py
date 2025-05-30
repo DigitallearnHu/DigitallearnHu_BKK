@@ -50,72 +50,66 @@ def generate_6_digit_code() -> str:
 def can_resend_code() -> bool:
     return time.time() - st.session_state.code_sent_time > 60
 
-def login_ui():
-    st.title("🔐 Login or Register")
+def verify_2fa_ui():
+    st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
 
-    # 2FA verification step
-    if st.session_state.awaiting_2fa:
-        st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
+    seconds_passed = int(time.time() - st.session_state.code_sent_time)
+    seconds_left = max(0, 60 - seconds_passed)
 
-        seconds_passed = int(time.time() - st.session_state.code_sent_time)
-        seconds_left = max(0, 60 - seconds_passed)
+    # Countdown timer (uncomment if you want auto-refresh)
+    # if seconds_left > 0:
+    #     st_autorefresh(interval=1000, limit=60, key="count_active")
 
-        # Countdown timer refresh while waiting for code
-        #if seconds_left > 0:
-        #    st_autorefresh(interval=1000, limit=60, key="count_active")
+    code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
 
-        code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
+    if seconds_left > 0:
+        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
+    else:
+        st.info("You can request a new code now.")
 
-        if seconds_left > 0:
-            st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
-        else:
-            st.info("You can request a new code now.")
+    col1, col2 = st.columns([3, 1])
 
-        col1, col2 = st.columns([3, 1])
+    with col1:
+        if st.button("Verify Code"):
+            if len(code_input) != 6:
+                st.warning("Please enter all 6 digits of the verification code.")
+                return
+            if code_input != st.session_state.generated_code:
+                st.error("❌ Invalid code. Please try again.")
+                return
 
-        with col1:
-            if st.button("Verify Code"):
-                if len(code_input) != 6:
-                    st.warning("Please enter all 6 digits of the verification code.")
-                    return
-                if code_input != st.session_state.generated_code:
-                    st.error("❌ Invalid code. Please try again.")
-                    return
+            ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
+            if ok:
+                st.success("✅ Registration successful. Redirecting to dashboard...")
 
-                # Register user on correct code
-                ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
-                if ok:
-                    st.success("✅ Registration successful. Redirecting to dashboard...")
+                # Update session state
+                st.session_state.awaiting_2fa = False
+                st.session_state.logged_in = True
+                st.session_state.email = st.session_state.pending_email
+                st.session_state.config = load_config(st.session_state.email) or {}
+                st.session_state.config_key_suffix = config_hash(st.session_state.config)
 
-                    # Clear 2FA flags and set logged in
-                    st.session_state.awaiting_2fa = False
-                    st.session_state.logged_in = True
-                    st.session_state.email = st.session_state.pending_email
-                    st.session_state.config = load_config(st.session_state.email) or {}
-                    st.session_state.config_key_suffix = config_hash(st.session_state.config)
+                st.session_state.generated_code = ""
+                st.session_state.pending_email = ""
+                st.session_state.pending_password = ""
 
-                    st.session_state.generated_code = ""
-                    st.session_state.pending_email = ""
-                    st.session_state.pending_password = ""
+                st.rerun()
+            else:
+                st.error(msg)
 
-                    st.rerun()
-                else:
-                    st.error(msg)
+    with col2:
+        if st.button("Resend Code", disabled=seconds_left > 0):
+            code = generate_6_digit_code()
+            st.session_state.generated_code = code
+            sent = send_2fa_code(st.session_state.pending_email, code)
+            if sent:
+                st.session_state.code_sent_time = time.time()
+                st.success("✅ Verification code resent.")
+            else:
+                st.error("❌ Failed to send verification code.")
 
-        with col2:
-            if st.button("Resend Code", disabled=seconds_left > 0):
-                code = generate_6_digit_code()
-                st.session_state.generated_code = code
-                sent = send_2fa_code(st.session_state.pending_email, code)
-                if sent:
-                    st.session_state.code_sent_time = time.time()
-                    st.success("✅ Verification code resent.")
-                else:
-                    st.error("❌ Failed to send verification code.")
 
-        return  # skip login form while awaiting 2FA
-
-    # Normal login form
+def login_form_ui():
     email = st.text_input("Email", key="email_input")
     password = st.text_input("Password", type="password", key="password_input")
 
@@ -141,7 +135,6 @@ def login_ui():
             else:
                 st.error(msg)
         else:
-            # User does not exist, send 2FA code for registration
             code = generate_6_digit_code()
             sent = send_2fa_code(email, code)
             if sent:
@@ -154,6 +147,16 @@ def login_ui():
                 st.rerun()
             else:
                 st.error("Failed to send verification code. Please try again later.")
+
+
+def login_ui():
+    st.title("🔐 Login or Register")
+
+    if st.session_state.awaiting_2fa:
+        verify_2fa_ui()
+    else:
+        login_form_ui()
+
 
 def show_config_editor():
     st.title("🛠️ BKK Display Config Editor")
