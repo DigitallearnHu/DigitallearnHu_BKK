@@ -94,7 +94,6 @@ def login_ui():
                     st.session_state.generated_code = ""
                     st.session_state.pending_email = ""
                     st.session_state.pending_password = ""
-                    st.rerun()
                     return
                 else:
                     st.error(msg)
