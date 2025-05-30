@@ -45,41 +45,22 @@ def login_ui():
 
     if st.session_state.awaiting_2fa:
         st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
-    
-        # Auto refresh once per second if timer > 0
+
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
+
+        # Auto-refresh every second while countdown active (requires streamlit-autorefresh)
         if seconds_left > 0:
-            count = st_autorefresh(interval=1000, limit=60, key="count")
-    
-        cols = st.columns(6)
-        code_digits = []
-    
-        # Read stored digits or empty strings
-        for i in range(6):
-            key = f"code_digit_{i}"
-            val = st.session_state.get(key, "")
-            code_digits.append(val)
-    
-        # First box handles paste
-        first_digit = cols[0].text_input("1", max_chars=6, key="code_digit_0", label_visibility="collapsed", value=code_digits[0])
-        if len(first_digit) > 1:
-            # Paste detected, distribute chars
-            for i, ch in enumerate(first_digit[:6]):
-                st.session_state[f"code_digit_{i}"] = ch
-            first_digit = first_digit[0]
-    
-        code_digits[0] = first_digit
-    
-        # Other boxes
-        for i in range(1,6):
-            val = cols[i].text_input(str(i+1), max_chars=1, key=f"code_digit_{i}", label_visibility="collapsed", value=code_digits[i])
-    
-        code_input = "".join(st.session_state.get(f"code_digit_{i}", "") for i in range(6))
-    
-        st.info(f"⏳ You can request a new code in {seconds_left} seconds." if seconds_left > 0 else "You can request a new code now.")
-    
-        col1, col2 = st.columns([3,1])
+            st_autorefresh(interval=1000, limit=60, key="count")
+
+        code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
+
+        if seconds_left > 0:
+            st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
+        else:
+            st.info("You can request a new code now.")
+
+        col1, col2 = st.columns([3, 1])
         with col1:
             if st.button("Verify Code"):
                 if len(code_input) != 6:
@@ -91,8 +72,6 @@ def login_ui():
                     if ok:
                         st.success("✅ Registration successful. Please log in now.")
                         st.session_state.awaiting_2fa = False
-                        for i in range(6):
-                            st.session_state.pop(f"code_digit_{i}", None)
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
                         st.session_state.pending_password = ""
