@@ -9,7 +9,7 @@ from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="BKK Config Editor", layout="centered")
 
-# --- State Defaults ---
+# --- Initialize session state ---
 default_states = {
     "logged_in": False,
     "email": "",
@@ -39,9 +39,6 @@ def generate_6_digit_code() -> str:
 def can_resend_code() -> bool:
     return time.time() - st.session_state.code_sent_time > 60
 
-# --- Login/Register UI ---
-give me this part
-
 def login_ui():
     st.title("🔐 Login or Register")
 
@@ -51,7 +48,6 @@ def login_ui():
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
 
-        # Auto-refresh every second while countdown active (requires streamlit-autorefresh)
         if seconds_left > 0:
             st_autorefresh(interval=1000, limit=60, key="count")
 
@@ -104,8 +100,8 @@ def login_ui():
             st.error("❌ Please enter a valid email address.")
             return
 
-        # Check if user exists (find_user returns (row_num, user) or (None, None))
-        row_num, user = register_user(email, password)  # We modify register_user to return (None, "exists") if user exists
+        # Check if user exists
+        row_num, user = register_user(email, password)  # Modified to return (None, "exists") if user exists
 
         if user == "exists":
             # User exists, try login
@@ -132,6 +128,7 @@ def login_ui():
                 st.session_state.generated_code = code
                 st.session_state.code_sent_time = time.time()
                 st.info(f"A 6-digit verification code has been sent to {email}. Please enter it below.")
+                st.experimental_rerun()
             else:
                 st.error("Failed to send verification code. Please try again later.")
 
@@ -151,9 +148,7 @@ with top_col1:
 with top_col2:
     st.markdown(f"**Logged in as:** `{st.session_state.email}`")
 
-# Upload + Apply config logic here...
-
-# --- Prevent re-apply from triggering upload again ---
+# Upload config section
 if "just_applied_config" in st.session_state:
     del st.session_state["just_applied_config"]
 else:
@@ -169,7 +164,7 @@ else:
     elif "uploaded_config" in st.session_state and st.session_state.uploaded_config:
         st.session_state.uploaded_config = None
 
-if st.session_state.uploaded_config:
+if "uploaded_config" in st.session_state and st.session_state.uploaded_config:
     if st.button("✅ Apply Uploaded Config"):
         st.session_state.config = st.session_state.uploaded_config
         st.session_state.uploaded_config = None
