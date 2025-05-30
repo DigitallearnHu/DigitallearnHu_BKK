@@ -34,17 +34,16 @@ def find_user(email):
 
 def register_user(email, password):
     sheet = get_sheet()
-    row_num, existing = find_user(sheet, email)
+    row_num, existing = find_user(email)
     if existing:
         return None, "exists"  # User exists
     hashed = hash_password(password)
     now = datetime.now().isoformat()
     sheet.append_row([email, hashed, now, 0, "{}"])
-    return find_user(sheet, email)  # Return newly created user info
+    return find_user(email)  # Return newly created user info
 
 def login_user(email, password):
-    sheet = get_sheet()
-    row_num, user = find_user(sheet, email)
+    row_num, user = find_user(email)
     if not user:
         return False, "User not found.", None
     if hash_password(password) != user["Password"]:
@@ -53,7 +52,7 @@ def login_user(email, password):
 
 def save_config(email, config_json):
     sheet = get_sheet()
-    row_num, user = find_user(sheet, email)
+    row_num, user = find_user(email)
 
     if not user or not row_num:
         return False, "User not found or invalid row number."
@@ -90,8 +89,7 @@ def save_config(email, config_json):
     return True, f"✅ Upload #{upload_count} saved successfully."
 
 def load_config(email):
-    sheet = get_sheet()
-    _, user = find_user(sheet, email)
+    _, user = find_user(email)
     if not user:
         return None
     try:
