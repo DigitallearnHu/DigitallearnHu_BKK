@@ -40,6 +40,8 @@ def can_resend_code() -> bool:
     return time.time() - st.session_state.code_sent_time > 60
 
 # --- Login/Register UI ---
+give me this part
+
 def login_ui():
     st.title("🔐 Login or Register")
 
@@ -49,7 +51,7 @@ def login_ui():
         seconds_passed = int(time.time() - st.session_state.code_sent_time)
         seconds_left = max(0, 60 - seconds_passed)
 
-        # Optional: auto-refresh every second for countdown (requires streamlit-autorefresh)
+        # Auto-refresh every second while countdown active (requires streamlit-autorefresh)
         if seconds_left > 0:
             st_autorefresh(interval=1000, limit=60, key="count")
 
@@ -68,11 +70,9 @@ def login_ui():
                 elif code_input != st.session_state.generated_code:
                     st.error("❌ Invalid code. Please try again.")
                 else:
-                    # Register user only after code verified
                     ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
                     if ok:
                         st.success("✅ Registration successful. Please log in now.")
-                        # Reset 2FA state
                         st.session_state.awaiting_2fa = False
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
@@ -92,7 +92,6 @@ def login_ui():
                     st.error("❌ Failed to send verification code.")
 
         return
-
 
     email = st.text_input("Email", key="email_input")
     password = st.text_input("Password", type="password", key="password_input")
