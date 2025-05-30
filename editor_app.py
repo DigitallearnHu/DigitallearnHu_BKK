@@ -45,9 +45,32 @@ if not st.session_state.logged_in:
     login_ui()
     st.stop()
 
-# --- Load Config ---
+# --- Main Editor ---
 st.title("🛠️ BKK Display Config Editor")
 
+# --- Logout + Upload ---
+top_col1, top_col2 = st.columns([1, 5])
+with top_col1:
+    if st.button("🔒 Logout"):
+        st.session_state.clear()
+        st.rerun()
+
+with top_col2:
+    st.markdown(f"**Logged in as:** `{st.session_state.email}`")
+
+st.subheader("📤 Load a Saved Config")
+uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
+
+if uploaded_file:
+    try:
+        uploaded_config = json.load(uploaded_file)
+        st.session_state.config = uploaded_config
+        st.success("✅ Config loaded successfully!")
+        st.rerun()
+    except Exception as e:
+        st.error(f"❌ Failed to load config: {e}")
+
+# --- Load Config ---
 config = st.session_state.config or {}
 
 # Set defaults
@@ -120,3 +143,6 @@ if st.button("Save to My Config"):
         st.success(msg)
     else:
         st.error(msg)
+
+# Download
+st.download_button("⬇️ Download config.json", config_json, file_name="config.json", mime="application/json")
