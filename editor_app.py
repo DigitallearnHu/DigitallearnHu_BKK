@@ -44,7 +44,7 @@ def login_ui():
 
     if st.session_state.awaiting_2fa:
         st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
-        
+    
         st.write("Enter your 6-digit verification code:")
         cols = st.columns(6)
         code_digits = []
@@ -53,17 +53,23 @@ def login_ui():
             code_digits.append(digit)
     
         code_input = "".join(code_digits)
-        
-        resend_disabled = not can_resend_code()
+    
+        seconds_passed = int(time.time() - st.session_state.code_sent_time)
+        seconds_left = max(0, 60 - seconds_passed)
+        if seconds_left > 0:
+            st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
+    
         col1, col2 = st.columns([3, 1])
         with col1:
             if st.button("Verify Code"):
-                if code_input == st.session_state.generated_code:
-                    # Register user now
+                if len(code_input) != 6:
+                    st.warning("Please enter all 6 digits of the verification code.")
+                elif code_input != st.session_state.generated_code:
+                    st.error("❌ Invalid code. Please try again.")
+                else:
                     ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
                     if ok:
                         st.success("✅ Registration successful. Please log in now.")
-                        # Reset 2FA state
                         st.session_state.awaiting_2fa = False
                         st.session_state.generated_code = ""
                         st.session_state.pending_email = ""
@@ -71,10 +77,8 @@ def login_ui():
                         st.experimental_rerun()
                     else:
                         st.error(msg)
-                else:
-                    st.error("❌ Invalid code. Please try again.")
         with col2:
-            if st.button("Resend Code", disabled=resend_disabled):
+            if st.button("Resend Code", disabled=seconds_left > 0):
                 code = generate_6_digit_code()
                 st.session_state.generated_code = code
                 sent = send_2fa_code(st.session_state.pending_email, code)
