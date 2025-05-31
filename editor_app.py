@@ -26,17 +26,13 @@ default_states = {
 for key, default_value in default_states.items():
     if key not in st.session_state:
         st.session_state[key] = default_value
-
-def hard_refresh():
-    st.components.v1.html(
-        """
-        <script>
-            window.location.reload(true);
-        </script>
-        """,
-        height=0,
-        width=0,
-    )
+        
+def countdown_timer(seconds_left: int):
+    countdown_placeholder = st.empty()
+    for remaining in range(seconds_left, 0, -1):
+        countdown_placeholder.info(f"⏳ You can request a new code in {remaining} seconds.")
+        time.sleep(1)
+    countdown_placeholder.info("You can request a new code now.")
 
 def config_hash(config: dict) -> str:
     return hashlib.md5(json.dumps(config, sort_keys=True).encode()).hexdigest()[:8]
@@ -59,6 +55,10 @@ def verify_2fa_ui():
     # Countdown timer (uncomment if you want auto-refresh)
     # if seconds_left > 0:
     #     st_autorefresh(interval=1000, limit=60, key="count_active")
+    if seconds_left > 0:
+        countdown_timer(seconds_left)
+    else:
+        st.info("You can request a new code now.")
 
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
 
