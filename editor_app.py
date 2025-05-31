@@ -63,6 +63,10 @@ def verify_2fa_ui():
     # --- Verify ---
     with col1:
         if st.button("Verify Code"):
+            if time.time() - st.session_state.code_sent_time > 60:
+                st.error("⏳ This code has expired. Please request a new one.")
+                return
+            
             if len(code_input) != 6:
                 st.warning("Please enter all 6 digits of the verification code.")
                 return
