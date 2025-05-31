@@ -87,7 +87,8 @@ def verify_2fa_ui():
                 st.session_state.pending_email = ""
                 st.session_state.pending_password = ""
 
-                st.rerun()
+                show_config_editor()
+                st.stop()
             else:
                 st.error(msg)
 
