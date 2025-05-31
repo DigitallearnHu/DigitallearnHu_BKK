@@ -123,7 +123,7 @@ def login_form_ui():
 
         row_num, user = find_user(email)
 
-        if user == "exists":
+        if user:
             ok, msg, _ = login_user(email, password)
             if ok:
                 st.session_state.logged_in = True
