@@ -52,30 +52,14 @@ def verify_2fa_ui():
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Countdown message with live update using JS
-    countdown_placeholder = st.empty()
-
+    # Auto-refresh to keep countdown updating
     if seconds_left > 0:
-        countdown_placeholder.markdown(f"""
-        <div id="countdown-msg">⏳ You can request a new code in {seconds_left} seconds.</div>
-        <script>
-            let seconds = {seconds_left};
-            let countdownEl = document.getElementById("countdown-msg");
-            let interval = setInterval(function() {{
-                seconds -= 1;
-                if (seconds > 0) {{
-                    countdownEl.innerText = "⏳ You can request a new code in " + seconds + " seconds.";
-                }} else {{
-                    countdownEl.innerText = "You can request a new code now.";
-                    clearInterval(interval);
-                }}
-            }}, 1000);
-        </script>
-        """, unsafe_allow_html=True)
+        st_autorefresh(interval=1000, limit=seconds_left, key="countdown_timer")
+        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
     else:
-        countdown_placeholder.info("You can request a new code now.")
+        st.info("You can request a new code now.")
 
-    # Code input
+    # Input field (unblocked)
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
     col1, col2, col3 = st.columns([3, 2, 1])
@@ -120,15 +104,12 @@ def verify_2fa_ui():
 
     with col3:
         if st.button("❌ Cancel"):
-            # Clear session state and go back to login
             st.session_state.awaiting_2fa = False
             st.session_state.pending_email = ""
             st.session_state.pending_password = ""
             st.session_state.generated_code = ""
             st.session_state.code_sent_time = 0
             st.rerun()
-
-
 
 def login_form_ui():
     email = st.text_input("Email", key="email_input")
