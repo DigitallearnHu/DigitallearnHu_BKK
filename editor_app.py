@@ -52,12 +52,9 @@ def verify_2fa_ui():
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Countdown timer (uncomment if you want auto-refresh)
-    # if seconds_left > 0:
-    #     st_autorefresh(interval=1000, limit=60, key="count_active")
+    # Countdown + auto-refresh
     if seconds_left > 0:
         st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
-    
         st.markdown("""
         <script>
             setTimeout(function() {
@@ -68,13 +65,8 @@ def verify_2fa_ui():
     else:
         st.info("You can request a new code now.")
 
-
-    code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
-
-    if seconds_left > 0:
-        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
-    else:
-        st.info("You can request a new code now.")
+    # Code input
+    code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
     col1, col2 = st.columns([3, 1])
 
