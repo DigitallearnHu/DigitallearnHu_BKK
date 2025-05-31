@@ -56,9 +56,18 @@ def verify_2fa_ui():
     # if seconds_left > 0:
     #     st_autorefresh(interval=1000, limit=60, key="count_active")
     if seconds_left > 0:
-        countdown_timer(seconds_left)
+        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
+    
+        st.markdown("""
+        <script>
+            setTimeout(function() {
+                window.location.reload();
+            }, 1000);
+        </script>
+        """, unsafe_allow_html=True)
     else:
         st.info("You can request a new code now.")
+
 
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6, key="code_input")
 
