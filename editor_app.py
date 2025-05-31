@@ -55,10 +55,6 @@ def verify_2fa_ui():
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Trigger a single refresh after 60s to enable resend
-    if seconds_left > 0:
-        st_autorefresh(interval=1000 * seconds_left, limit=1, key="unlock_resend")
-
     # Code input
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
@@ -88,6 +84,7 @@ def verify_2fa_ui():
                 st.session_state.config = load_config(st.session_state.email) or {}
                 st.session_state.config_key_suffix = config_hash(st.session_state.config)
 
+                # Clean up
                 st.session_state.generated_code = ""
                 st.session_state.pending_email = ""
                 st.session_state.pending_password = ""
@@ -119,6 +116,7 @@ def verify_2fa_ui():
             st.session_state.generated_code = ""
             st.session_state.code_sent_time = 0
             st.rerun()
+
 
 def login_form_ui():
     email = st.text_input("Email", key="email_input")
