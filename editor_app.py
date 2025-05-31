@@ -49,35 +49,17 @@ def can_resend_code() -> bool:
 def verify_2fa_ui():
     st.title("🔐 Email Verification")
 
-    st.info(f"A 6-digit verification code was sent to `{st.session_state.pending_email}`. Please enter it below.")
+    st.info(f"A 6-digit verification code was sent to `{st.session_state.pending_email}`. It will be valid for 1 minute.")
 
-    # --- Countdown logic ---
+    # Time tracking
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    countdown_placeholder = st.empty()
-
+    # Trigger a single refresh after 60s to enable resend
     if seconds_left > 0:
-        countdown_placeholder.markdown(f"""
-        <div id="countdown">⏳ You can request a new code in {seconds_left} seconds.</div>
-        <script>
-            let seconds = {seconds_left};
-            let el = document.getElementById("countdown");
-            let interval = setInterval(function() {{
-                seconds -= 1;
-                if (seconds > 0) {{
-                    el.innerText = "⏳ You can request a new code in " + seconds + " seconds.";
-                }} else {{
-                    el.innerText = "✅ You can now click 'Resend Code'.";
-                    clearInterval(interval);
-                }}
-            }}, 1000);
-        </script>
-        """, unsafe_allow_html=True)
-    else:
-        countdown_placeholder.info("✅ You can now click 'Resend Code'.")
+        st_autorefresh(interval=1000 * seconds_left, limit=1, key="unlock_resend")
 
-    # --- Code input ---
+    # Code input
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
     col1, col2, col3 = st.columns([3, 2, 1])
@@ -93,21 +75,19 @@ def verify_2fa_ui():
                 st.error("❌ Invalid code. Please try again.")
                 return
 
-            # Attempt registration
             ok, msg = register_user(
                 st.session_state.pending_email,
                 st.session_state.pending_password
             )
 
             if ok:
-                # Update login state
+                # Successful registration
                 st.session_state.logged_in = True
                 st.session_state.awaiting_2fa = False
                 st.session_state.email = st.session_state.pending_email
                 st.session_state.config = load_config(st.session_state.email) or {}
                 st.session_state.config_key_suffix = config_hash(st.session_state.config)
 
-                # Clean up temp data
                 st.session_state.generated_code = ""
                 st.session_state.pending_email = ""
                 st.session_state.pending_password = ""
@@ -139,8 +119,6 @@ def verify_2fa_ui():
             st.session_state.generated_code = ""
             st.session_state.code_sent_time = 0
             st.rerun()
-
-
 
 def login_form_ui():
     email = st.text_input("Email", key="email_input")
