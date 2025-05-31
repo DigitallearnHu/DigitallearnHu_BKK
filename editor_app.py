@@ -52,23 +52,33 @@ def verify_2fa_ui():
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Countdown + auto-refresh
+    # Countdown message with live update using JS
+    countdown_placeholder = st.empty()
+
     if seconds_left > 0:
-        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
-        st.markdown("""
+        countdown_placeholder.markdown(f"""
+        <div id="countdown-msg">⏳ You can request a new code in {seconds_left} seconds.</div>
         <script>
-            setTimeout(function() {
-                window.location.reload();
-            }, 1000);
+            let seconds = {seconds_left};
+            let countdownEl = document.getElementById("countdown-msg");
+            let interval = setInterval(function() {{
+                seconds -= 1;
+                if (seconds > 0) {{
+                    countdownEl.innerText = "⏳ You can request a new code in " + seconds + " seconds.";
+                }} else {{
+                    countdownEl.innerText = "You can request a new code now.";
+                    clearInterval(interval);
+                }}
+            }}, 1000);
         </script>
         """, unsafe_allow_html=True)
     else:
-        st.info("You can request a new code now.")
+        countdown_placeholder.info("You can request a new code now.")
 
     # Code input
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([3, 2, 1])
 
     with col1:
         if st.button("Verify Code"):
@@ -83,7 +93,6 @@ def verify_2fa_ui():
             if ok:
                 st.success("✅ Registration successful. Redirecting to dashboard...")
 
-                # Update session state
                 st.session_state.awaiting_2fa = False
                 st.session_state.logged_in = True
                 st.session_state.email = st.session_state.pending_email
@@ -108,6 +117,17 @@ def verify_2fa_ui():
                 st.success("✅ Verification code resent.")
             else:
                 st.error("❌ Failed to send verification code.")
+
+    with col3:
+        if st.button("❌ Cancel"):
+            # Clear session state and go back to login
+            st.session_state.awaiting_2fa = False
+            st.session_state.pending_email = ""
+            st.session_state.pending_password = ""
+            st.session_state.generated_code = ""
+            st.session_state.code_sent_time = 0
+            st.rerun()
+
 
 
 def login_form_ui():
