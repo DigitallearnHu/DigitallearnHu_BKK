@@ -187,7 +187,6 @@ def show_config_editor():
         del st.session_state["just_applied_config"]
     else:
         uploaded_file = st.file_uploader("Upload your config.json", type=["json"])
-
         if uploaded_file:
             try:
                 uploaded_config = json.load(uploaded_file)
@@ -212,13 +211,19 @@ def show_config_editor():
     style = config.get("style", {})
     key_suffix = st.session_state.config_key_suffix
 
-    stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", [])), key=f"stops_{key_suffix}").split(",")
+    # --- Basic settings ---
+    st.subheader("General Settings")
+    title = st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard"), key=f"title_{key_suffix}")
+    refresh_interval = st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30), key=f"refresh_{key_suffix}")
 
+    # --- Layout ---
     st.subheader("Layout")
     layout_col = st.columns(2)
     view = layout_col[0].selectbox("View", ["grid", "list"], index=["grid", "list"].index(layout.get("view", "grid")), key=f"view_{key_suffix}")
     columns = layout_col[1].number_input("Columns per row", 1, 5, layout.get("columns_per_row", 3), key=f"columns_{key_suffix}")
+    stops = st.text_input("Stop IDs (comma-separated)", ",".join(layout.get("stop_order", [])), key=f"stops_{key_suffix}").split(",")
 
+    # --- Display options ---
     st.subheader("Display Options")
     dep_val = display.get("departures_per_stop", 5)
     departures = st.slider("Departures per stop", 1, 10, dep_val if 1 <= dep_val <= 10 else 5, key=f"departures_{key_suffix}")
@@ -230,17 +235,19 @@ def show_config_editor():
     direction = st.checkbox("Show direction", display.get("show_direction", False), key=f"direction_{key_suffix}")
     routes_filter = st.text_input("Only show these routes (comma-separated)", ",".join(display.get("filter_routes", [])), key=f"routes_{key_suffix}")
 
+    # --- Style ---
     st.subheader("Style")
     fonts = st.columns(3)
     title_size = fonts[0].number_input("Title font size", 10, 100, style.get("title_font_size", 32), key=f"title_size_{key_suffix}")
     subtitle_size = fonts[1].number_input("Subtitle font size", 10, 60, style.get("subtitle_font_size", 24), key=f"subtitle_size_{key_suffix}")
-    text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_size", 16), key=f"text_size_{key_suffix}")
+    text_size = fonts[2].number_input("Text font size", 10, 40, style.get("text_font_size", 16), key=f"text_size_{key_suffix}")
     emoji_bus = st.text_input("Bus emoji", style.get("custom_emojis", {}).get("bus", "🚍"), key=f"bus_{key_suffix}")
     emoji_tram = st.text_input("Tram emoji", style.get("custom_emojis", {}).get("tram", "🚋"), key=f"tram_{key_suffix}")
 
+    # --- Save new config ---
     new_config = {
-        "custom_title": st.text_input("Page Title", config.get("custom_title", "🚏 BKK Megállók Dashboard"), key=f"title_{key_suffix}"),
-        "refresh_interval_seconds": st.number_input("Auto-refresh (seconds)", 5, 120, config.get("refresh_interval_seconds", 30), key=f"refresh_{key_suffix}"),
+        "custom_title": title,
+        "refresh_interval_seconds": refresh_interval,
         "layout": {
             "view": view,
             "columns_per_row": columns,
@@ -282,6 +289,7 @@ def show_config_editor():
             st.error(msg)
 
     st.download_button("⬇️ Download config.json", config_json, file_name="config.json", mime="application/json")
+
 
 if not st.session_state.logged_in:
     login_ui()
