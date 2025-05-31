@@ -89,8 +89,8 @@ def verify_2fa_ui():
                 st.session_state.pending_password = ""
 
                 # Go directly to config editor
-                show_config_editor()
-                st.stop()
+                st.rerun()
+                return
             else:
                 st.error(msg)
 
