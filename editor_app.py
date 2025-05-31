@@ -47,53 +47,78 @@ def can_resend_code() -> bool:
     return time.time() - st.session_state.code_sent_time > 60
 
 def verify_2fa_ui():
-    if st.session_state.get("just_verified", False):
-        st.success("✅ Registration successful. Redirecting to dashboard...")
-        time.sleep(1.2)  # Give user a second to see it
-        st.session_state.just_verified = False
-        st.rerun()
+    st.title("🔐 Email Verification")
 
-    st.info(f"A 6-digit verification code was sent to {st.session_state.pending_email}. Please enter it below.")
+    st.info(f"A 6-digit verification code was sent to `{st.session_state.pending_email}`. Please enter it below.")
 
+    # --- Countdown logic ---
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Only refresh if we're still actively waiting
-    if st.session_state.awaiting_2fa and not st.session_state.logged_in and seconds_left > 0:
-        st_autorefresh(interval=1000, limit=seconds_left, key="countdown_timer")
-        st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
-    else:
-        st.info("You can request a new code now.")
+    countdown_placeholder = st.empty()
 
+    if seconds_left > 0:
+        countdown_placeholder.markdown(f"""
+        <div id="countdown">⏳ You can request a new code in {seconds_left} seconds.</div>
+        <script>
+            let seconds = {seconds_left};
+            let el = document.getElementById("countdown");
+            let interval = setInterval(function() {{
+                seconds -= 1;
+                if (seconds > 0) {{
+                    el.innerText = "⏳ You can request a new code in " + seconds + " seconds.";
+                }} else {{
+                    el.innerText = "✅ You can now click 'Resend Code'.";
+                    clearInterval(interval);
+                }}
+            }}, 1000);
+        </script>
+        """, unsafe_allow_html=True)
+    else:
+        countdown_placeholder.info("✅ You can now click 'Resend Code'.")
+
+    # --- Code input ---
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
     col1, col2, col3 = st.columns([3, 2, 1])
 
+    # --- Verify ---
     with col1:
         if st.button("Verify Code"):
             if len(code_input) != 6:
                 st.warning("Please enter all 6 digits of the verification code.")
                 return
+
             if code_input != st.session_state.generated_code:
                 st.error("❌ Invalid code. Please try again.")
                 return
 
-            ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
+            # Attempt registration
+            ok, msg = register_user(
+                st.session_state.pending_email,
+                st.session_state.pending_password
+            )
+
             if ok:
-                # Update session state
-                st.session_state.awaiting_2fa = False
+                # Update login state
                 st.session_state.logged_in = True
-                st.session_state.just_verified = True  # ✅ trigger delay frame
+                st.session_state.awaiting_2fa = False
                 st.session_state.email = st.session_state.pending_email
                 st.session_state.config = load_config(st.session_state.email) or {}
                 st.session_state.config_key_suffix = config_hash(st.session_state.config)
+
+                # Clean up temp data
                 st.session_state.generated_code = ""
                 st.session_state.pending_email = ""
                 st.session_state.pending_password = ""
+                st.session_state.code_sent_time = 0
+
+                st.success("✅ Registration successful.")
                 st.rerun()
             else:
                 st.error(msg)
 
+    # --- Resend ---
     with col2:
         if st.button("Resend Code", disabled=seconds_left > 0):
             code = generate_6_digit_code()
@@ -105,6 +130,7 @@ def verify_2fa_ui():
             else:
                 st.error("❌ Failed to send verification code.")
 
+    # --- Cancel ---
     with col3:
         if st.button("❌ Cancel"):
             st.session_state.awaiting_2fa = False
@@ -113,6 +139,7 @@ def verify_2fa_ui():
             st.session_state.generated_code = ""
             st.session_state.code_sent_time = 0
             st.rerun()
+
 
 
 def login_form_ui():
