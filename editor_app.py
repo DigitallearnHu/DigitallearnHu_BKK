@@ -52,14 +52,13 @@ def verify_2fa_ui():
     seconds_passed = int(time.time() - st.session_state.code_sent_time)
     seconds_left = max(0, 60 - seconds_passed)
 
-    # Auto-refresh to keep countdown updating
+    # Auto-refresh to update countdown
     if seconds_left > 0:
         st_autorefresh(interval=1000, limit=seconds_left, key="countdown_timer")
         st.info(f"⏳ You can request a new code in {seconds_left} seconds.")
     else:
         st.info("You can request a new code now.")
 
-    # Input field (unblocked)
     code_input = st.text_input("Enter your 6-digit verification code", max_chars=6)
 
     col1, col2, col3 = st.columns([3, 2, 1])
@@ -73,10 +72,12 @@ def verify_2fa_ui():
                 st.error("❌ Invalid code. Please try again.")
                 return
 
+            # Registration
             ok, msg = register_user(st.session_state.pending_email, st.session_state.pending_password)
             if ok:
                 st.success("✅ Registration successful. Redirecting to dashboard...")
 
+                # Update state
                 st.session_state.awaiting_2fa = False
                 st.session_state.logged_in = True
                 st.session_state.email = st.session_state.pending_email
@@ -87,6 +88,7 @@ def verify_2fa_ui():
                 st.session_state.pending_email = ""
                 st.session_state.pending_password = ""
 
+                # Go directly to config editor
                 show_config_editor()
                 st.stop()
             else:
@@ -153,6 +155,11 @@ def login_form_ui():
 
 
 def login_ui():
+    if st.session_state.logged_in:
+        # Already verified — prevent showing login or 2FA again
+        show_config_editor()
+        st.stop()
+        
     st.title("🔐 Login or Register")
 
     if st.session_state.awaiting_2fa:
