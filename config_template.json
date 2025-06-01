@@ -1,28 +1,91 @@
 {
   "custom_title": "🚏 BKK Megállók Dashboard",
   "refresh_interval_seconds": 5,
+
   "layout": {
     "view": "grid",
     "columns_per_row": 3,
-    "stop_order": ["BKK_F00270", "BKK_F00269", "BKK_F00268"]
+    "stop_order": ["BKK_F00270", "BKK_F00269", "BKK_F00268"],
+    "padding_between_cards": 16,
+    "card_border_radius": 12
   },
+
   "display": {
     "departures_per_stop": 5,
     "show_wheelchair_icon": true,
     "show_stop_location": true,
     "highlight_soon_departures": true,
-    "filter_routes": [],
     "show_stop_code": false,
-    "show_direction": false
+    "show_direction": false,
+    "show_stop_name": true,
+    "group_by_direction": false,
+    "show_route_short_name": true,
+    "use_24h_time": true,
+    "max_departure_age_seconds": 180
   },
+
   "style": {
-    "title_font_size": 32,
-    "subtitle_font_size": 24,
-    "text_font_size": 16,
     "color_by_route": true,
+    "card_shadow": true,
+    "card_border": true,
+    "fonts": {
+      "title": {
+        "size": 32,
+        "family": "Roboto",
+        "weight": "bold"
+      },
+      "subtitle": {
+        "size": 24,
+        "family": "Roboto",
+        "weight": "normal"
+      },
+      "text": {
+        "size": 16,
+        "family": "Roboto",
+        "weight": "normal"
+      },
+      "time": {
+        "size": 20,
+        "family": "Roboto Mono",
+        "weight": "medium"
+      }
+    },
+    "clock": {
+      "font_family": "Roboto",
+      "font_size": 20,
+      "font_weight": "bold",
+      "text_color": "#333333"
+    },
+    "colors": {
+      "text": "#000000",
+      "title_text": "#000000",
+      "subtitle_text": "#444444",
+      "clock_text": "#333333",
+      "background": "#ffffff",
+      "card_background": "#f8f8f8",
+      "card_border": "#dddddd",
+      "highlight_departure": "#ff0000"
+    },
     "custom_emojis": {
       "bus": "🚍",
-      "tram": "🚋"
+      "tram": "🚋",
+      "metro": "🚇"
     }
+  },
+
+  "clock": {
+    "show": true,
+    "position": "top-right"
+  },
+
+  "top_highlight_zone": {
+    "enabled": true,
+    "minutes_threshold": 5,
+    "max_items": 3,
+    "font_size": 22,
+    "font_family": "Roboto",
+    "text_color": "#ff6600",
+    "show_route_icon": true,
+    "show_countdown": true
   }
 }
